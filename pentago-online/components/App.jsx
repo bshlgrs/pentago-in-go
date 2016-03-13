@@ -84,11 +84,12 @@ App = React.createClass({
                   className="form-control"
                   type="text"
                   ref="nameInput"
-                  placeholder="Name of game" />
+                  placeholder="Name of game"
+                  defaultValue={this.data.user.username + "'s cool game"}/>
                 <div className="radio">
                   {[2, 3, 4].map((n) => {
                     return <label key={n} className="radio-inline">
-                      <input type="radio" name="playerNumber" value={n} /> {n} players
+                      <input type="radio" name="playerNumber" value={n} defaultChecked={2 == n}/> {n} players
                     </label>
                   })}
                 </div>
@@ -117,7 +118,7 @@ App = React.createClass({
         </div>
       );
     } else if (this.state.state == "view-game") {
-      inner = <ShowGame game={Games.findOne({_id: this.state.currentGameId})} />
+      inner = <ShowGame userId={this.data.userId} game={Games.findOne({_id: this.state.currentGameId})} />
     }
 
     return <div>
@@ -125,6 +126,8 @@ App = React.createClass({
         <AccountsUIWrapper/>
       </div>
       <h1 onClick={this.goToMainMenu}><a>pentago online</a></h1>
+      {!this.data.userId &&
+        <div className="alert alert-info">Sign up to play games!</div>}
       {inner}
     </div>
   },
@@ -171,10 +174,11 @@ ShowGame = React.createClass({
     var game = this.props.game;
 
     var inner = <p></p>;
+    var that = this;
 
     if (game.state == "getting-players") {
       inner = <div>
-        <p>Currently getting players!</p>
+        <p>Currently waiting on more players! {game.numberOfPlayers - game.players.length} needed.</p>
 
         {game.players.length ? <div>
           <p>Players:</p>
@@ -185,7 +189,7 @@ ShowGame = React.createClass({
           </ul>
         </div> : null}
 
-        {game.players.map((x) => x._id).indexOf(this.data.userId) == -1 ?
+        {game.players.map((x) => x._id).indexOf(that.props.userId) == -1 ?
           <button className="btn btn-primary" onClick={this.handleJoin}>Join game!</button>
           : null}
 

@@ -49,10 +49,11 @@ Meteor.methods({
       name: name,
       numberOfPlayers: numberOfPlayers,
       state: "getting-players",
-      players: [],
+      players: [Meteor.user()],
       createdAt: new Date(),
       stateHistory: [],
-      moveHistory: []
+      moveHistory: [],
+      creator: Meteor.user()
     });
 
     return gameId;
