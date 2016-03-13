@@ -1,26 +1,45 @@
 package main
 import "fmt"
+import "os"
+import "strconv"
+
+func main() {
+  board := PentagoBoard{}
+  currentPlayer, _ := strconv.Atoi(os.Args[1])
+  numberOfPlayers, _ := strconv.Atoi(os.Args[2])
+  boardString := os.Args[3]
+
+  for i := byte(0); i < 81; i++ {
+    player := byte(boardString[i] - '0')
+    board.PlayPieceMut(i / BoardSize, i % BoardSize, player)
+  }
+
+  move := GetMove(board, byte(currentPlayer), byte(numberOfPlayers))
+  move.PrintStandardly()
+  // board.PrintBoard()
+  // fmt.Printf("%d %d\n", currentPlayer, numberOfPlayers)
+}
+
+func GetMove(board PentagoBoard, currentPlayer, numberOfPlayers byte) PentagoMove {
+  found, move := board.GetUnambiguouslyCorrectMoveIfExists(currentPlayer)
+
+  if found {
+    return move
+  }
+
+  for i := byte(0); i < 81; i++ {
+    if board.Get(i % 9, i / 9) == 0 {
+      return PentagoMove{i % 9, i / 9, 1, 1, true}
+    }
+  }
+
+  return PentagoMove{}
+}
 
 const BoardSize byte = 9
 const Penta byte = 5
 const MiniSquareSize byte = 3
 const NumberOfMiniSquares byte = BoardSize / MiniSquareSize
-
-func main() {
-  board := PentagoBoard{}
-  board.PlayPieceMut(2, 2 + 1, 1);
-  board.PlayPieceMut(3, 3 + 1, 1);
-  board.PlayPieceMut(4, 4 + 1, 1);
-  board.PlayPieceMut(5, 5 + 1, 1);
-  board.RotateMut(1, 1, true);
-  board.PrintBoard();
-
-  fmt.Printf("and the winner is %d\n", board.GetWinner());
-
-  found, move := board.GetUnambiguouslyCorrectMoveIfExists(1)
-
-  fmt.Printf("get winning place says %b %d %d %d %d %b\n", found, move.x, move.y, move.rotationX, move.rotationY, move.clockwise)
-}
 
 type PentagoBoard struct {
   grid [BoardSize][BoardSize]byte
@@ -31,8 +50,17 @@ type PentagoMove struct {
   clockwise bool
 }
 
+func (m PentagoMove) PrintStandardly () {
+  fmt.Printf("%d %d %d %d %t\n", m.x, m.y, m.rotationX, m.rotationY, m.clockwise)
+}
+
 func (b PentagoBoard) Get (x, y byte) byte {
   return b.grid[y][x];
+}
+
+func (b *PentagoBoard) PlayMoveMut (move PentagoMove, player byte) {
+  b.PlayPieceMut(move.x, move.y, player);
+  b.RotateMut(move.rotationX, move.rotationY, move.clockwise);
 }
 
 func (b *PentagoBoard) PlayPieceMut (x, y, player byte) {
@@ -195,10 +223,6 @@ func (board PentagoBoard) GetUnambiguouslyCorrectMoveIfExists (player byte) (boo
 }
 
 func getWinningPlaceIfExists (player byte, board PentagoBoard) (bool, byte, byte) {
-  // something like...
-  var protectiveMoveFound = false
-  var protectiveMoveX, protectiveMoveY byte
-
   for start := byte(0); start < BoardSize; start++ {
     startInt := int8(start)
     directions := [][]int8{{0, startInt, 0, 1},{startInt, 0, 1, 0},{startInt, 0, 1, 1},{startInt, 0, -1, 1},{0, startInt, 1, 1},{0, startInt, -1, 1}}
@@ -208,68 +232,67 @@ func getWinningPlaceIfExists (player byte, board PentagoBoard) (bool, byte, byte
       startY := byte(direction[1])
       deltaX := direction[2]
       deltaY := direction[3]
-      success, x, y, winningPlayer := getWinningLineIfExists(board, startX, startY, deltaX, deltaY)
+      success, x, y := getWinningLineIfExists(board, startX, startY, deltaX, deltaY, player)
       if success {
-        if winningPlayer == player {
-          fmt.Printf("thing2: %d %d %d\n", x, y, winningPlayer)
-          return true, x, y
-        }
-        protectiveMoveFound = true
-        protectiveMoveX = x
-        protectiveMoveY = y
+        return true, x, y
       }
     }
-  }
-
-  if protectiveMoveFound {
-    return true, protectiveMoveX, protectiveMoveY
   }
 
   return false, 0, 0
 }
 
 // if BoardSize were greater than Penta * 2 - 1, there could be multiple return values
-// returns (isThereASolution?, x, y, player)
-func getWinningLineIfExists (board PentagoBoard, startX, startY byte, deltaX, deltaY int8) (bool, byte, byte, byte) {
+// returns (isThereASolution?, x, y)
+func getWinningLineIfExists (board PentagoBoard, startX, startY byte, deltaX, deltaY int8, player byte) (bool, byte, byte) {
   if endX := deltaX * int8(Penta) + int8(startX); endX < 0 || endX >= int8(BoardSize) {
-    return false, 0, 0, 0;
+    return false, 0, 0;
   }
   if endY := deltaY * int8(Penta) + int8(startY); endY < 0 || endY >= int8(BoardSize) {
-    return false, 0, 0, 0;
+    return false, 0, 0;
   }
 
   x := int8(startX)
   y := int8(startY)
 
-  prev := byte(0)
-  count := byte(0)
-  prevWasBlank := false
+  previousLineLength := byte(0)
+  currentLineLength := byte(0)
+
+  emptySpaceFound := false
+  resultX := startX
+  resultY := startY
 
   for x >= 0 && byte(x) < BoardSize && y >= 0 && byte(y) < BoardSize {
     piece := board.Get(byte(x), byte(y));
-    if piece == prev && piece != 0 {
-      count += 1;
-      if count == Penta - 1 {
-        if prevWasBlank {
-          fmt.Println("here1")
-          return true, byte(x - deltaX * int8(Penta - 1)), byte(y - deltaY * int8(Penta - 1)), prev
-        }
-        if board.Get(byte(x + deltaX), byte(y + deltaY)) == 0 {
-          fmt.Println("here2")
-          return true, byte(x + deltaX), byte(y + deltaY), prev
-        }
+    if piece == player {
+      currentLineLength += 1
+      if currentLineLength + previousLineLength == Penta - 1 && emptySpaceFound {
+        return true, resultX, resultY
+      }
+    } else if piece == 0 {
+      previousLineLength = currentLineLength
+      currentLineLength = 0
+      resultX = byte(x)
+      resultY = byte(y)
+      emptySpaceFound = true
+
+      if previousLineLength == Penta - 1 {
+        return true, resultX, resultY
       }
     } else {
-      prev = piece;
-      count = 1;
-      prevWasBlank = true;
+      currentLineLength = 0
+      previousLineLength = 0
+      emptySpaceFound = false
     }
 
     x += deltaX;
     y += deltaY;
   }
-  return false, 0, 0, 0;
+  return false, 0, 0;
 }
+
+// given a list of numbers like [0, 1, 1, 1, 0, 1, 2, 2]
+
 
 func rotateCoord(squareX, squareY, pieceX, pieceY byte, clockwise bool) (byte, byte) {
   if pieceX / MiniSquareSize == squareX && pieceY / MiniSquareSize == squareY {
@@ -292,33 +315,3 @@ func rotateCoord(squareX, squareY, pieceX, pieceY byte, clockwise bool) (byte, b
   }
 }
 
-
-
-// func main() {
-//     in := bufio.NewReader(os.Stdin)
-
-//     fmt.Print("Enter string: ")
-//     s, err := in.ReadString('\n')
-//     if err != nil {
-//         fmt.Println(err)
-//         return
-//     }
-//     s = strings.TrimSpace(s)
-
-//     fmt.Print("Enter 75000: ")
-//     s, err = in.ReadString('\n')
-//     if err != nil {
-//         fmt.Println(err)
-//         return
-//     }
-//     n, err := strconv.Atoi(strings.TrimSpace(s))
-//     if err != nil {
-//         fmt.Println(err)
-//         return
-//     }
-//     if n != 75000 {
-//         fmt.Println("fail:  not 75000")
-//         return
-//     }
-//     fmt.Println("Good")
-// }
