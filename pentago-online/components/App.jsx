@@ -32,10 +32,9 @@ App = React.createClass({
     var numberOfPlayers = parseInt(document.querySelector('input[name="playerNumber"]:checked').value);
     var that = this;
 
-    Meteor.call("createGame", name, numberOfPlayers);
-    // , function (err, thing) {
-    //   that.setState({ state: "view-game", currentGameId: thing._id});
-    // });
+    Meteor.call("createGame", name, numberOfPlayers, function (err, gameId) {
+      that.setState({ state: "view-game", currentGameId: gameId});
+    });
   },
 
   render() {
@@ -117,8 +116,10 @@ App = React.createClass({
     }
 
     return <div>
-      <h1 onClick={this.goToMainMenu}>Pentago</h1>
-      <AccountsUIWrapper />
+      <div className="pull-right">
+        <AccountsUIWrapper/>
+      </div>
+      <h1 onClick={this.goToMainMenu}><a>pentago online</a></h1>
       {inner}
     </div>
   },
@@ -138,9 +139,9 @@ GameListItem = React.createClass({
         {game.players.length ? <span>
           Players: {game.players.map((x) => x.username).join(",")}.
           </span> :
-        <span>{game.numberOfPlayers} player game. &nbsp;</span>}
+        <span>{game.numberOfPlayers} player game. </span>}
 
-        Needs {game.numberOfPlayers - game.players.length} more players.
+        &nbsp;Needs {game.numberOfPlayers - game.players.length} more players.
       </span>;
     } else if (game.state == "playing") {
       inner = <span>

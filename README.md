@@ -17,3 +17,8 @@ example usage:
     |   |   |   |
     +-----------+
     1 4
+
+
+the web thing:
+
+env DEPLOY_HOSTNAME=galaxy.meteor.com  meteor deploy pentago.meteorapp.com --settings ../../settings.json

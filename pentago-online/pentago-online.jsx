@@ -45,7 +45,7 @@ Meteor.methods({
       throw new Meteor.Error("not-authorized");
     }
 
-    Games.insert({
+    var gameId = Games.insert({
       name: name,
       numberOfPlayers: numberOfPlayers,
       state: "getting-players",
@@ -54,6 +54,8 @@ Meteor.methods({
       stateHistory: [],
       moveHistory: []
     });
+
+    return gameId;
   },
 
   joinGame(gameId) {
