@@ -1,17 +1,19 @@
 FlowRouter.route('/games/:gameId', {
   action: function(params, queryParams) {
     ReactDOM.render(
-      <App initialState="view-game" initialGameId={params.gameId}/>,
+      <App/>,
       document.getElementById("render-target")
     );
-  }
+  },
+  name: 'view-game'
 });
 
 FlowRouter.route('/', {
   action: function(params, queryParams) {
     ReactDOM.render(
-      <App initialState="list"/>,
+      <App/>,
       document.getElementById("render-target")
     );
-  }
+  },
+  name: 'root'
 });

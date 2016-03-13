@@ -1,13 +1,6 @@
 App = React.createClass({
   mixins: [ReactMeteorData],
 
-  getInitialState () {
-    return {
-      state: this.props.initialState,
-      currentGameId: this.props.initialGameId
-    };
-  },
-
   getMeteorData() {
     return {
       games: Games.find({}).fetch(),
@@ -21,12 +14,10 @@ App = React.createClass({
 
   handleGameSelect (_id) {
     FlowRouter.go('/games/' + _id);
-    this.setState({ state: "view-game", currentGameId: _id});
   },
 
   goToMainMenu () {
     FlowRouter.go('/');
-    this.setState({ state: "list" });
   },
 
   handleCreateGame (event) {
@@ -38,7 +29,7 @@ App = React.createClass({
     var that = this;
 
     Meteor.call("createGame", name, numberOfPlayers, function (err, gameId) {
-      that.setState({ state: "view-game", currentGameId: gameId});
+      FlowRouter.go('/games/' + gameId);
     });
   },
 
@@ -47,7 +38,7 @@ App = React.createClass({
 
     var inner = <p></p>;
 
-    if (this.state.state == "list") {
+    if (FlowRouter.getRouteName() == "root") {
       inner = (
         <div>
           <div className="panel panel-default">
@@ -120,8 +111,8 @@ App = React.createClass({
 
         </div>
       );
-    } else if (this.state.state == "view-game") {
-      inner = <ShowGame userId={this.data.userId} game={Games.findOne({_id: this.state.currentGameId})} />
+    } else if (FlowRouter.getRouteName() == "view-game") {
+      inner = <ShowGame userId={this.data.userId} game={Games.findOne({_id: FlowRouter.getParam("gameId")})} />
     }
 
     return <div>
@@ -136,83 +127,3 @@ App = React.createClass({
   },
 });
 
-GameListItem = React.createClass({
-  handleClick () {
-    this.props.handleGameSelect(this.props.game._id);
-  },
-  render () {
-    var game = this.props.game;
-
-    var inner;
-
-    if (this.props.game.state == "getting-players") {
-      inner = <span>
-        {game.players.length ? <span>
-          Players: {game.players.map((x) => x.username).join(",")}.
-          </span> :
-        <span>{game.numberOfPlayers} player game. </span>}
-
-        &nbsp;Needs {game.numberOfPlayers - game.players.length} more players.
-      </span>;
-    } else if (game.state == "playing") {
-      inner = <span>
-        Players: {game.players.map((x) => x.username).join(",")}
-        . Current turn: {game.players[game.currentTurn].username}.
-      </span>;
-    } else if (game.state == "finished") {
-      inner = <span>{game.winner.username} won!</span>;
-    }
-
-    return <li>
-      <a onClick={this.handleClick}>{game.name}</a> {inner}
-    </li>;
-  }
-});
-
-ShowGame = React.createClass({
-  handleJoin () {
-    Meteor.call("joinGame", this.props.game._id);
-  },
-  render () {
-    var game = this.props.game;
-
-    var inner = <p></p>;
-    var that = this;
-
-    if (game.state == "getting-players") {
-      inner = <div>
-        <p>Currently waiting on more players! {game.numberOfPlayers - game.players.length} needed.</p>
-
-        {game.players.length ? <div>
-          <p>Players:</p>
-          <ul>
-            {game.players.map((x) => {
-              return <li key={x._id}>{x.username}</li>;
-            })}
-          </ul>
-        </div> : null}
-
-        {game.players.map((x) => x._id).indexOf(that.props.userId) == -1 ?
-          <button className="btn btn-primary" onClick={this.handleJoin}>Join game!</button>
-          : null}
-
-      </div>;
-    } else if (game.state == "playing") {
-      inner = <div>
-        <Pentago size={9} miniSquareSize={3} game={game}/>
-      </div>;
-    } else if (game.state == "finished") {
-      inner = <div>
-        <Pentago size={9} miniSquareSize={3} game={game}/>
-      </div>;
-    }
-
-    return (
-      <div>
-        <h3>{this.props.game.name}</h3>
-
-        {inner}
-      </div>
-    );
-  }
-})
