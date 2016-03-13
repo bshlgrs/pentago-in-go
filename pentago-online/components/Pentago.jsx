@@ -133,7 +133,7 @@ Pentago = React.createClass({
           <div className="panel-body">
             {game.winner ?
             <strong>{game.winner.username} has won the game!</strong> :
-            <strong style={{color: this.colors[game.currentTurn]}}>{game.players[game.currentTurn].username} is about to
+            <strong style={{color: this.colors[game.currentTurn + 1]}}>{game.players[game.currentTurn].username} is about to
               {game.placingPiece ? " place a piece": " do a rotation"}
             </strong>}
           </div>
