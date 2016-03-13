@@ -3,7 +3,8 @@ App = React.createClass({
 
   getInitialState () {
     return {
-      state: "list"
+      state: this.props.initialState,
+      currentGameId: this.props.initialGameId
     };
   },
 
@@ -19,10 +20,12 @@ App = React.createClass({
   },
 
   handleGameSelect (_id) {
+    FlowRouter.go('/games/' + _id);
     this.setState({ state: "view-game", currentGameId: _id});
   },
 
   goToMainMenu () {
+    FlowRouter.go('/');
     this.setState({ state: "list" });
   },
 
