@@ -12,7 +12,9 @@ App = React.createClass({
       games: Games.find({}).fetch(),
       gamesGettingPlayers: Games.find({ state: "getting-players"}).fetch(),
       gamesPlaying: Games.find({ state: "playing"}).fetch(),
-      gamesFinished: Games.find({ state: "finished"}).fetch()
+      gamesFinished: Games.find({ state: "finished"}).fetch(),
+      user: Meteor.user(),
+      userId: Meteor.userId()
     }
   },
 
@@ -73,6 +75,7 @@ App = React.createClass({
             </div>
           </div>
 
+          {this.data.user &&
           <div className="panel panel-default">
             <div className="panel-body">
               <h3>Make new game!</h3>
@@ -93,7 +96,9 @@ App = React.createClass({
                 <button className="btn btn-primary" type="submit">Create game</button>
               </form>
             </div>
-          </div>
+          </div>}
+
+
 
           <div className="panel panel-default">
             <div className="panel-body">
@@ -180,7 +185,7 @@ ShowGame = React.createClass({
           </ul>
         </div> : null}
 
-        {game.players.map((x) => x._id).indexOf(Meteor.userId()) == -1 ?
+        {game.players.map((x) => x._id).indexOf(this.data.userId) == -1 ?
           <button className="btn btn-primary" onClick={this.handleJoin}>Join game!</button>
           : null}
 
