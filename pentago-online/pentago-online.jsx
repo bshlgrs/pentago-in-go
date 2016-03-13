@@ -7,32 +7,34 @@ if (Meteor.isClient) {
   });
 
   Meteor.startup(function () {
-    var board = [
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4],
-        [0,1,0,0,0,0,2,3,4]
-    ];
-
-    // ReactDOM.render(
-    //   <Pentago size={9} miniSquareSize={3} board={board} numberOfPlayers={4}/>,
-    //   document.getElementById("render-target")
-
     ReactDOM.render(
       <App/>,
       document.getElementById("render-target")
     );
   });
+
+  Meteor.subscribe("games");
 }
 
 if (Meteor.isServer) {
   Meteor.startup(function () {
 
+  });
+
+  // Meteor.publish("new-games", function () {
+  //   return Games.find({state: "getting-players"});
+  // });
+
+  // Meteor.publish("playing-games", function () {
+  //   return Games.find({state: "playing"});
+  // });
+
+  // Meteor.publish("finished-games", function () {
+  //   return Games.find({state: "finished"});
+  // });
+
+  Meteor.publish("games", function () {
+    return Games.find({});
   });
 }
 
@@ -106,6 +108,10 @@ Meteor.methods({
 
     if (!game.placingPiece || playerNumber == -1 || playerNumber != game.currentTurn) {
       throw new Meteor.Error("not-authorized");
+    }
+
+    if (board[y][x] != 0) {
+      throw new Meteor.Error("bad-request");
     }
 
     board[y][x] = playerNumber + 1;
@@ -193,7 +199,6 @@ function playerHasWon(board) {
             if (length == 5) {
               return true;
             }
-            console.log(currX, currY);
           }
         }
       };

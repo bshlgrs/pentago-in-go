@@ -11,12 +11,12 @@ Pentago = React.createClass({
     this.colors = ["gray", "red", "blue", "green", "yellow"];
   },
   currentPlayerId () {
-    if (this.state.state == "playing") {
+    if (this.props.game.state == "playing") {
       return this.props.game.players[this.props.game.currentTurn]._id;
     }
   },
   isMyTurn () {
-    return this.state.state == "playing" && Meteor.userId() == this.currentPlayerId();
+    return this.props.game.state == "playing" && Meteor.userId() == this.currentPlayerId();
   },
   componentDidMount () {
     var canvas = this.refs.canvas;
@@ -42,10 +42,11 @@ Pentago = React.createClass({
   handleCanvasClick (e) {
     if (this.isMyTurn()) {
       if (this.props.game.placingPiece) {
-        Meteor.call("playPiece", this.props.game._id, this.state.currentX, this.state.currentY);
+        if (this.props.game.board[this.state.currentY][this.state.currentX] == 0) {
+          Meteor.call("playPiece", this.props.game._id, this.state.currentX, this.state.currentY);
+        }
       }
     }
-
   },
   handleCounterclockwiseRotate () {
     this.handleRotate(false);

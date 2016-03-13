@@ -9,7 +9,10 @@ App = React.createClass({
 
   getMeteorData() {
     return {
-      games: Games.find({}).fetch()
+      games: Games.find({}).fetch(),
+      gamesGettingPlayers: Games.find({ state: "getting-players"}).fetch(),
+      gamesPlaying: Games.find({ state: "playing"}).fetch(),
+      gamesFinished: Games.find({ state: "finished"}).fetch()
     }
   },
 
@@ -48,11 +51,25 @@ App = React.createClass({
               <h3>Join a game!</h3>
               {this.data.games.length ?
                 <ul>
-                  {this.data.games.map((game) => {
+                  {this.data.gamesGettingPlayers.map((game) => {
                     return <GameListItem handleGameSelect={this.handleGameSelect} key={game._id} game={game} />;
                   })}
                 </ul> :
                 <p>No games currently exist, create one?</p>
+              }
+            </div>
+          </div>
+
+          <div className="panel panel-default">
+            <div className="panel-body">
+              <h3>Currently live matches</h3>
+              {this.data.games.length ?
+                <ul>
+                  {this.data.gamesPlaying.map((game) => {
+                    return <GameListItem handleGameSelect={this.handleGameSelect} key={game._id} game={game} />;
+                  })}
+                </ul> :
+                <p>No-one is playing right now :(</p>
               }
             </div>
           </div>
@@ -78,6 +95,21 @@ App = React.createClass({
               </form>
             </div>
           </div>
+
+          <div className="panel panel-default">
+            <div className="panel-body">
+              <h3>Old matches</h3>
+              {this.data.games.length ?
+                <ul>
+                  {this.data.gamesFinished.map((game) => {
+                    return <GameListItem handleGameSelect={this.handleGameSelect} key={game._id} game={game} />;
+                  })}
+                </ul> :
+                <p>No-one has played yet :(</p>
+              }
+            </div>
+          </div>
+
         </div>
       );
     } else if (this.state.state == "view-game") {
@@ -97,9 +129,30 @@ GameListItem = React.createClass({
     this.props.handleGameSelect(this.props.game._id);
   },
   render () {
+    var game = this.props.game;
+
+    var inner;
+
+    if (this.props.game.state == "getting-players") {
+      inner = <span>
+        {game.players.length ? <span>
+          Players: {game.players.map((x) => x.username).join(",")}.
+          </span> :
+        <span>{game.numberOfPlayers} player game. &nbsp;</span>}
+
+        Needs {game.numberOfPlayers - game.players.length} more players.
+      </span>;
+    } else if (game.state == "playing") {
+      inner = <span>
+        Players: {game.players.map((x) => x.username).join(",")}
+        . Current turn: {game.players[game.currentTurn].username}.
+      </span>;
+    } else if (game.state == "finished") {
+      inner = <span>{game.winner.username} won!</span>;
+    }
+
     return <li>
-      <a onClick={this.handleClick}>{this.props.game.name}</a>
-      &nbsp; ({this.props.game.numberOfPlayers} players)
+      <a onClick={this.handleClick}>{game.name}</a> {inner}
     </li>;
   }
 });
