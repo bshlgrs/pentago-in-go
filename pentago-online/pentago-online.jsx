@@ -7,7 +7,21 @@ if (Meteor.isClient) {
   });
 
   Meteor.startup(function () {
+    var mainSound = new buzz.sound('/sounds/main.m4a');
+    var otherSound = new buzz.sound('/sounds/other.m4a');
 
+
+    Games.find({}).observe({
+      changed: function (newGame, oldGame) {
+        if (Meteor.userId()) {
+          if (newGame.players.map((x) => {return x._id}).indexOf(Meteor.userId()) != -1) {
+            if (oldGame.players[oldGame.currentTurn]._id != newGame.players[newGame.currentTurn]._id) {
+              mainSound.play();
+            }
+          }
+        }
+      }
+    })
   });
 
   Meteor.subscribe("games");
