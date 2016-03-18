@@ -99,25 +99,7 @@ Meteor.methods({
   playPiece(gameId, x, y) {
     var game = Games.findOne({_id: gameId});
     var board = game.board;
-    var playerNumber = game.players.map((x) => x._id).indexOf(Meteor.userId());
-
-    if (!game.placingPiece || playerNumber == -1 || playerNumber != game.currentTurn) {
-      throw new Meteor.Error("not-authorized");
-    }
-
-    board[y][x] = playerNumber + 1;
-
-    Games.update(game._id, {
-      $set: {
-        board: board,
-        placingPiece: false
-      }
-    });
-  },
-
-  playPiece(gameId, x, y) {
-    var game = Games.findOne({_id: gameId});
-    var board = game.board;
+    var oldBoard = JSON.parse(JSON.stringify(game.board));
     var playerNumber = game.players.map((x) => x._id).indexOf(Meteor.userId());
 
     if (!game.placingPiece || playerNumber == -1 || playerNumber != game.currentTurn) {
@@ -136,7 +118,8 @@ Meteor.methods({
       Games.update(game._id, {
         $set: {
           board: board,
-          placingPiece: false
+          placingPiece: false,
+          stateHistory: game.stateHistory.concat([oldBoard])
         }
       });
     }
@@ -174,7 +157,8 @@ Meteor.methods({
         $set: {
           board: newBoard,
           placingPiece: true,
-          currentTurn: (game.currentTurn + 1) % game.numberOfPlayers
+          currentTurn: (game.currentTurn + 1) % game.numberOfPlayers,
+          stateHistory: game.stateHistory.concat([board])
         }
       });
     }
